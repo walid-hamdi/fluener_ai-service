@@ -32,3 +32,9 @@ uvicorn app.main:app --reload
 ## Documentation
 
 Visit http://localhost:8000/docs for interactive API documentation.
+
+
+![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
