@@ -1,4 +1,3 @@
-# app/main.py
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,7 +18,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    print("\n👋 Shutting down...")
+    print("\n Shutting down...")
 
 
 # Create FastAPI app
@@ -32,7 +31,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS - Smart configuration
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if settings.is_development else settings.cors_origins_list,
@@ -52,4 +51,13 @@ async def root():
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
         "status": "running"
+    }
+@app.get("/health")
+async def health():
+    """Root-level health check for monitoring"""
+    return {
+        "status": "healthy",
+        "service": settings.APP_NAME,
+        "version": settings.VERSION,
+        "environment": settings.ENVIRONMENT
     }
