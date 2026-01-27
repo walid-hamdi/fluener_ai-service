@@ -2,12 +2,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api import endpoints
-
+from app.api.endpoints import router
+from app.core.models import models  
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    # Startup - models are initialized by import
     print("=" * 60)
     print(f"{settings.APP_NAME} v{settings.VERSION}")
     print(f"Environment: {settings.ENVIRONMENT}")
@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    print("\n Shutting down...")
+    print("\n🛑 Shutting down...")
 
 
 # Create FastAPI app
@@ -41,7 +41,7 @@ app.add_middleware(
 )
 
 # Include API routes
-app.include_router(endpoints.router, prefix="/api", tags=["AI Models"])
+app.include_router(router, prefix="/api") 
 
 # Root endpoint
 @app.get("/")
@@ -52,6 +52,7 @@ async def root():
         "environment": settings.ENVIRONMENT,
         "status": "running"
     }
+
 @app.get("/health")
 async def health():
     """Root-level health check for monitoring"""

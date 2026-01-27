@@ -1,16 +1,25 @@
+# Test outputs
+tests/output*.wav
+tests/output*.mp3
+output*.wav
+output*.mp3
+*.wav
+*.mp3
+
+# Test files (optional - only if you don't want to commit tests)
+# tests/
+
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
 *.pyc
+*.pyo
+*.pyd
 .Python
+
+# Virtual environment
 venv/
 env/
 ENV/
-*.so
-
-# FastAPI
-.env
 
 # IDE
 .vscode/
@@ -22,7 +31,19 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Testing
-.pytest_cache/
-htmlcov/
-.coverage
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+EOF

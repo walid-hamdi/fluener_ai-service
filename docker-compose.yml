@@ -14,6 +14,7 @@ services:
       - ENVIRONMENT=development
       - PORT=8000
       - PYTHONUNBUFFERED=1
+      - OLLAMA_URL=http://ollama:11434  # ← Override for Docker
     depends_on:
       - ollama
     restart: unless-stopped
@@ -26,7 +27,6 @@ services:
     volumes:
       - ollama-models:/root/.ollama
     restart: unless-stopped
-    # Pull mistral model on first start
     command: >
       sh -c "ollama serve & sleep 10 && ollama pull mistral:7b-instruct && wait"
 
