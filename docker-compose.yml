@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  ai-service:
+    build: .
+    container_name: ai-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - model-cache:/root/.cache
+      - nltk-data:/root/nltk_data
+    environment:
+      - ENVIRONMENT=development
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+    # Pull mistral model on first start
+    command: >
+      sh -c "ollama serve & sleep 10 && ollama pull mistral:7b-instruct && wait"
+
+volumes:
+  model-cache:
+  nltk-data:
+  ollama-models:
