@@ -11,10 +11,11 @@ services:
       - model-cache:/root/.cache
       - nltk-data:/root/nltk_data
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
       - PORT=8000
       - PYTHONUNBUFFERED=1
-      - OLLAMA_URL=http://ollama:11434  # ← Override for Docker
+      - OLLAMA_URL=http://ollama:11434
+      - API_SECRET_KEY=${API_SECRET_KEY}
     depends_on:
       - ollama
     restart: unless-stopped
@@ -29,6 +30,16 @@ services:
     restart: unless-stopped
     command: >
       sh -c "ollama serve & sleep 10 && ollama pull mistral:7b-instruct && wait"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    restart: unless-stopped
+    depends_on:
+      - ai-service
 
 volumes:
   model-cache:

@@ -1,27 +1,36 @@
 """Language Model endpoint"""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Request
 from app.models.schemas import LLMRequest, LLMResponse
 from app.services.ollama_service import OllamaService
+from app.core.security import verify_api_key
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 import httpx
 import time
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 @router.post("/llm", response_model=LLMResponse, tags=["Language Model"])
-async def generate_response(request: LLMRequest):
+@limiter.limit("20/minute")
+async def generate_response(
+    request: Request,
+    llm_request: LLMRequest,
+    api_key: str = Depends(verify_api_key)
+):
     """Generate AI response using Mistral"""
     start_time = time.time()
     
     try:
         messages = [
             {"role": msg.role, "content": msg.content}
-            for msg in request.messages
+            for msg in llm_request.messages
         ]
         
         content = await OllamaService.generate(
             messages,
-            request.temperature,
-            request.max_tokens
+            llm_request.temperature,
+            llm_request.max_tokens
         )
         
         return LLMResponse(
