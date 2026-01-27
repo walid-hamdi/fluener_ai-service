@@ -4,3 +4,6 @@ python-multipart==0.0.6
 pydantic==2.5.0
 pydantic-settings==2.1.0
 httpx==0.26.0
+openai-whisper==20250625
+torch>=2.0.0
+styletts2>=0.1.0
