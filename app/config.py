@@ -1,9 +1,6 @@
-
-
-
 # app/config.py
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 import os
 
 class Settings(BaseSettings):
@@ -26,10 +23,17 @@ class Settings(BaseSettings):
     # AI Services
     OLLAMA_URL: str = "http://localhost:11434"
     
+    # Security
+    API_SECRET_KEY: Optional[str] = None
+    
+    # Cloudflare Tunnel
+    TUNNEL_TOKEN: Optional[str] = None
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "allow"  # Allow extra fields from .env
     
     @property
     def cors_origins_list(self) -> List[str]:
@@ -43,5 +47,5 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.lower() in ["production", "prod"]
-
+ 
 settings = Settings()

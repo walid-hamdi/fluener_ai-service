@@ -1,25 +1,42 @@
 version: '3.8'
 
 services:
+  # ==================== AI SERVICE (FastAPI) ====================
   ai-service:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: ai-service
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/app/app
+      # Mount app for hot-reload in development
+      - ./app:/app/app:ro
+      # Cache model downloads
       - model-cache:/root/.cache
       - nltk-data:/root/nltk_data
+      - whisper-models:/root/.cache/whisper
     environment:
-      - ENVIRONMENT=production
+      - ENVIRONMENT=${ENVIRONMENT:-development}
       - PORT=8000
       - PYTHONUNBUFFERED=1
       - OLLAMA_URL=http://ollama:11434
       - API_SECRET_KEY=${API_SECRET_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://api.fluener.com,http://localhost:3000}
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - ai-network
 
+  # ==================== OLLAMA (LLM) ====================
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -27,21 +44,74 @@ services:
       - "11434:11434"
     volumes:
       - ollama-models:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - ai-network
+    # Pull models on startup
     command: >
-      sh -c "ollama serve & sleep 10 && ollama pull mistral:7b-instruct && wait"
+      sh -c "
+        ollama serve &
+        sleep 10 &&
+        ollama pull mistral:7b-instruct &&
+        echo 'Mistral model ready!' &&
+        wait
+      "
 
+  # ==================== CLOUDFLARE TUNNEL ====================
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
-    command: tunnel run
+    command: tunnel --no-autoupdate run
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     restart: unless-stopped
     depends_on:
-      - ai-service
+      ai-service:
+        condition: service_healthy
+    networks:
+      - ai-network
 
+  # ==================== DEVELOPMENT ONLY ====================
+  # Uncomment for development hot-reload
+  # ai-service-dev:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: ai-service-dev
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./app:/app/app  # Live code reload
+  #     - model-cache:/root/.cache
+  #   environment:
+  #     - ENVIRONMENT=development
+  #     - OLLAMA_URL=http://ollama:11434
+  #   command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+  #   depends_on:
+  #     - ollama
+  #   profiles:
+  #     - dev
+
+# ==================== VOLUMES ====================
 volumes:
   model-cache:
+    driver: local
   nltk-data:
+    driver: local
   ollama-models:
+    driver: local
+  whisper-models:
+    driver: local
+
+# ==================== NETWORKS ====================
+networks:
+  ai-network:
+    driver: bridge
